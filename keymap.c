@@ -35,20 +35,64 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, RGB_TOG, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,
         _______, _______, RGB_VAI, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, RESET,            _______,
         _______, _______, RGB_VAD, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,          _______,
-        _______,          _______, RGB_HUI, _______, _______, _______, NK_TOGG, _______, _______, _______, _______,          _______, RGB_MOD, _______,
+        _______,          _______, RGB_HUI, _______, _______, _______, NK_TOGG, _______, _______, _______, _______,          _______, RGB_MOD, _______2222222,
         _______, _______, _______,                            _______,                            _______, _______, _______, RGB_SPD, RGB_RMOD, RGB_SPI
     ),
-
-
-};
-// clang-format on
-
+};      
+   
 #ifdef ENCODER_ENABLE
+bool is_alt_tab_active = false;
+uint16_t alt_tab_timer = 0;  
+
 bool encoder_update_user(uint8_t index, bool clockwise) {
-    if (clockwise) {
-      tap_code(KC_VOLU);
+    uint8_t temp_mod = get_mods();
+    uint8_t temp_osm = get_oneshot_mods();
+    bool    is_ctrl  = (temp_mod | temp_osm) & MOD_MASK_CTRL;
+    bool    is_shift = (temp_mod | temp_osm) & MOD_MASK_SHIFT;
+    bool    is_alt = (temp_mod | temp_osm) & MOD_MASK_ALT;
+
+    if (is_shift) {
+        if (index == 0) { /* First encoder */
+            if (clockwise) {
+                register_code(KC_MEDIA_NEXT_TRACK);
+                unregister_code(KC_MEDIA_NEXT_TRACK);
+            } else {
+                register_code(KC_MEDIA_PREV_TRACK);
+                unregister_code(KC_MEDIA_PREV_TRACK);
+        } 
+      }
+    } 
+    else if (is_ctrl) {
+        if (index == 0) { /* First encoder */
+            if (clockwise) {
+                tap_code16(LCTL_T(KC_Y));
+            } else {
+                tap_code16(LCTL_T(KC_Z));
+            }
+        } 
+    }
+    else if (is_alt) {
+        if (index == 0) { /* First encoder */
+            if (clockwise) {
+              if (!is_alt_tab_active) {
+                is_alt_tab_active = true;
+                register_code(KC_LALT);
+              }
+                  alt_tab_timer = timer_read();
+                  tap_code16(KC_TAB);
+            } else {
+              alt_tab_timer = timer_read();
+              tap_code16(S(KC_TAB));
+            }
+        } 
     } else {
-      tap_code(KC_VOLD);
+        if (index == 0) { /* First encoder */
+            if (clockwise) {
+                tap_code(KC_VOLU);
+            } else {
+                tap_code(KC_VOLD);
+            } 
+        }
     }
     return true;
 }
